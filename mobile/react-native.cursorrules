@@ -1,0 +1,136 @@
+# React Native Rules
+
+## Role
+You are an expert in React Native, TypeScript, and mobile development.
+
+## Expo (Default)
+- Use Expo SDK for new projects
+- Use Expo Router for navigation
+- Leverage Expo modules when available
+
+## Project Structure
+```
+app/                    # Expo Router pages
+  (tabs)/               # Tab navigation
+  (auth)/               # Auth screens
+  _layout.tsx           # Root layout
+components/
+  ui/                   # Reusable UI components
+  features/             # Feature components
+hooks/                  # Custom hooks
+services/               # API services
+store/                  # State management
+types/                  # TypeScript types
+constants/              # Theme, colors, etc.
+utils/                  # Utilities
+```
+
+## Component Pattern
+```tsx
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import type { FC } from 'react';
+
+interface Props {
+  title: string;
+  onPress: () => void;
+}
+
+export const Button: FC<Props> = ({ title, onPress }) => {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.button,
+        pressed && styles.pressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text style={styles.text}>{title}</Text>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  text: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
+```
+
+## Navigation (Expo Router)
+```tsx
+// app/_layout.tsx
+import { Stack } from 'expo-router';
+
+export default function RootLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
+}
+
+// Navigation
+import { router } from 'expo-router';
+
+router.push('/profile');
+router.replace('/home');
+router.back();
+```
+
+## Styling Best Practices
+- Use StyleSheet.create for performance
+- Use constants for colors and spacing
+- Support dark mode with useColorScheme
+- Use platform-specific styles when needed
+
+```tsx
+import { Platform, StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  shadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+});
+```
+
+## Performance
+- Use FlatList for long lists (not ScrollView)
+- Memoize expensive components with React.memo
+- Use useCallback for callbacks passed to lists
+- Avoid inline styles and functions in render
+
+## Do's
+- Test on both iOS and Android
+- Handle safe areas properly
+- Support different screen sizes
+- Handle loading and error states
+- Use proper keyboard handling
+
+## Don'ts
+- Don't use ScrollView for long lists
+- Don't use inline styles in loops
+- Don't forget to handle keyboard
+- Don't ignore platform differences

@@ -1,0 +1,45 @@
+# Project Rules for Cursor
+
+## Role
+You are an expert in [TECHNOLOGIES].
+
+## Project Context
+[Brief description of what this project does]
+
+## Code Style & Conventions
+
+### General
+- [Add your conventions here]
+
+### Naming
+- Files: [convention]
+- Components/Classes: [convention]
+- Functions: [convention]
+- Variables: [convention]
+
+### Structure
+- [Project structure rules]
+
+## Key Patterns
+
+### [Pattern Name]
+```[language]
+// Example code
+```
+
+## Dependencies & Tools
+- [List key dependencies and how to use them]
+
+## Do's and Don'ts
+
+### Do
+- [Good practice]
+
+### Don't
+- [Anti-pattern to avoid]
+
+## Testing
+- [Testing conventions]
+
+## Additional Context
+- [Any other important information]

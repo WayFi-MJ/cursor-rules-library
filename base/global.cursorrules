@@ -1,0 +1,37 @@
+# Global Cursor Rules
+
+## Communication
+- Be concise and direct
+- Explain complex changes briefly
+- Ask clarifying questions when requirements are ambiguous
+
+## Code Quality
+- Write clean, readable, maintainable code
+- Follow DRY (Don't Repeat Yourself) principles
+- Prefer composition over inheritance
+- Keep functions small and focused (single responsibility)
+- Use meaningful variable and function names
+
+## Error Handling
+- Handle errors gracefully with informative messages
+- Never swallow errors silently
+- Use try-catch appropriately
+
+## Security
+- Never hardcode secrets, API keys, or credentials
+- Validate and sanitize all user inputs
+- Use environment variables for configuration
+
+## Performance
+- Avoid premature optimization
+- Be mindful of unnecessary re-renders (frontend)
+- Use appropriate data structures
+
+## Documentation
+- Add comments for complex logic only
+- Keep comments up to date with code
+- Self-documenting code is preferred over comments
+
+## Git Practices
+- Write clear, descriptive commit messages
+- Keep commits focused and atomic

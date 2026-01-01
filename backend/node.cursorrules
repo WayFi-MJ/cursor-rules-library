@@ -1,0 +1,119 @@
+# Node.js Rules
+
+## Role
+You are an expert in Node.js, TypeScript, and backend development.
+
+## General
+- Use TypeScript with strict mode enabled
+- Use ESM modules (`import/export`)
+- Use async/await over callbacks and raw promises
+
+## Project Structure
+```
+src/
+  controllers/        # Request handlers
+  services/           # Business logic
+  repositories/       # Data access layer
+  middleware/         # Express/Fastify middleware
+  routes/             # Route definitions
+  types/              # TypeScript types
+  utils/              # Utility functions
+  config/             # Configuration
+  index.ts            # Entry point
+```
+
+## Error Handling
+```ts
+// Custom error class
+export class AppError extends Error {
+  constructor(
+    public statusCode: number,
+    public message: string,
+    public isOperational = true
+  ) {
+    super(message);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Global error handler
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+  
+  console.error('Unexpected error:', err);
+  return res.status(500).json({
+    status: 'error',
+    message: 'Internal server error',
+  });
+};
+```
+
+## API Response Pattern
+```ts
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+  };
+}
+
+const successResponse = <T>(data: T, meta?: object): ApiResponse<T> => ({
+  success: true,
+  data,
+  meta,
+});
+
+const errorResponse = (message: string): ApiResponse<null> => ({
+  success: false,
+  error: message,
+});
+```
+
+## Validation (Zod)
+```ts
+import { z } from 'zod';
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2).max(100),
+  age: z.number().int().positive().optional(),
+});
+
+type CreateUserInput = z.infer<typeof createUserSchema>;
+```
+
+## Environment Variables
+```ts
+// config/env.ts
+import { z } from 'zod';
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']),
+  PORT: z.string().transform(Number),
+  DATABASE_URL: z.string().url(),
+});
+
+export const env = envSchema.parse(process.env);
+```
+
+## Do's
+- Validate all inputs at API boundaries
+- Use dependency injection for testability
+- Log errors with context
+- Use connection pooling for databases
+- Implement graceful shutdown
+
+## Don'ts
+- Don't use `any` type
+- Don't expose stack traces in production
+- Don't store secrets in code
+- Don't block the event loop

@@ -1,0 +1,118 @@
+# Python Rules
+
+## Role
+You are an expert in Python, FastAPI/Django, and backend development.
+
+## General
+- Use Python 3.10+ features (type hints, match statements)
+- Use type hints for all function signatures
+- Follow PEP 8 style guide
+- Use f-strings for string formatting
+
+## Project Structure (FastAPI)
+```
+app/
+  api/
+    v1/
+      endpoints/      # Route handlers
+      __init__.py
+    deps.py           # Dependencies
+  core/
+    config.py         # Settings
+    security.py       # Auth utilities
+  models/             # SQLAlchemy/Pydantic models
+  schemas/            # Pydantic schemas
+  services/           # Business logic
+  repositories/       # Data access
+  main.py             # Entry point
+tests/
+requirements.txt
+pyproject.toml
+```
+
+## Type Hints
+```python
+from typing import Optional, List
+from pydantic import BaseModel
+
+def get_user(user_id: int) -> Optional[User]:
+    ...
+
+def process_items(items: List[str]) -> dict[str, int]:
+    ...
+
+async def fetch_data(url: str, timeout: float = 30.0) -> bytes:
+    ...
+```
+
+## Pydantic Models
+```python
+from pydantic import BaseModel, Field, EmailStr
+from datetime import datetime
+
+class UserBase(BaseModel):
+    email: EmailStr
+    name: str = Field(..., min_length=2, max_length=100)
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True  # For ORM mode
+```
+
+## FastAPI Endpoint Pattern
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    user = await user_service.get_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
+```
+
+## Error Handling
+```python
+from fastapi import HTTPException, status
+
+class AppException(Exception):
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
+```
+
+## Do's
+- Use async/await for I/O operations
+- Use dependency injection
+- Validate all inputs with Pydantic
+- Use context managers for resources
+- Write docstrings for public functions
+
+## Don'ts
+- Don't use mutable default arguments
+- Don't catch bare exceptions
+- Don't use global state
+- Don't ignore type checker warnings

@@ -1,0 +1,110 @@
+# Next.js Rules
+
+## Role
+You are an expert in Next.js 14+, React, TypeScript, and modern web development.
+
+## App Router (Default)
+- Use the App Router (`/app` directory) for all new code
+- Leverage Server Components by default
+- Add 'use client' directive only when necessary
+
+## File Conventions
+```
+app/
+  (routes)/
+    page.tsx          # Route page
+    layout.tsx        # Route layout
+    loading.tsx       # Loading UI
+    error.tsx         # Error boundary
+    not-found.tsx     # 404 page
+  api/
+    route-name/
+      route.ts        # API route handler
+components/
+  ui/                 # Reusable UI components
+  features/           # Feature-specific components
+lib/                  # Utilities and helpers
+hooks/                # Custom React hooks
+types/                # TypeScript types
+```
+
+## Server vs Client Components
+
+### Server Components (default)
+- Data fetching
+- Accessing backend resources
+- Keeping sensitive info on server
+- Large dependencies
+
+### Client Components ('use client')
+- Interactivity (onClick, onChange, etc.)
+- Browser APIs (localStorage, etc.)
+- React hooks (useState, useEffect)
+- Third-party client libraries
+
+## Data Fetching
+
+### Server Component Fetching
+```tsx
+// app/users/page.tsx
+export default async function UsersPage() {
+  const users = await fetch('https://api.example.com/users', {
+    cache: 'no-store', // or 'force-cache', or next: { revalidate: 60 }
+  }).then(res => res.json());
+
+  return <UserList users={users} />;
+}
+```
+
+### Route Handlers
+```tsx
+// app/api/users/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  const users = await db.user.findMany();
+  return NextResponse.json(users);
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const user = await db.user.create({ data: body });
+  return NextResponse.json(user, { status: 201 });
+}
+```
+
+## Server Actions
+```tsx
+// app/actions.ts
+'use server'
+
+export async function createUser(formData: FormData) {
+  const name = formData.get('name');
+  await db.user.create({ data: { name } });
+  revalidatePath('/users');
+}
+```
+
+## Metadata
+```tsx
+// app/page.tsx
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Page Title',
+  description: 'Page description',
+};
+```
+
+## Do's
+- Use Server Components for data fetching
+- Implement loading and error states
+- Use Image component for images
+- Use Link component for navigation
+- Leverage parallel routes for complex layouts
+
+## Don'ts
+- Don't use 'use client' unnecessarily
+- Don't fetch in useEffect when Server Component works
+- Don't use next/router (use next/navigation)
+- Don't put API keys in client components

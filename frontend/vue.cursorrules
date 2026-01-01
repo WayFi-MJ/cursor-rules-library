@@ -1,0 +1,119 @@
+# Vue.js Rules
+
+## Role
+You are an expert in Vue 3, TypeScript, and the Composition API.
+
+## Composition API (Default)
+- Use `<script setup>` syntax exclusively
+- Prefer Composition API over Options API
+- Use TypeScript for type safety
+
+## File Structure
+```
+src/
+  components/
+    common/           # Reusable components
+    features/         # Feature-specific components
+  composables/        # Composition functions (hooks)
+  stores/             # Pinia stores
+  views/              # Route views/pages
+  types/              # TypeScript types
+  utils/              # Utility functions
+```
+
+## Component Template
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+
+interface Props {
+  title: string;
+  count?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  count: 0,
+});
+
+const emit = defineEmits<{
+  (e: 'update', value: number): void;
+}>;
+
+const localCount = ref(props.count);
+
+const doubled = computed(() => localCount.value * 2);
+
+const increment = () => {
+  localCount.value++;
+  emit('update', localCount.value);
+};
+
+onMounted(() => {
+  console.log('Component mounted');
+});
+</script>
+
+<template>
+  <div class="component">
+    <h1>{{ title }}</h1>
+    <p>Count: {{ localCount }} (doubled: {{ doubled }})</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+
+<style scoped>
+.component {
+  padding: 1rem;
+}
+</style>
+```
+
+## Pinia Store Pattern
+```ts
+// stores/user.ts
+import { defineStore } from 'pinia';
+
+export const useUserStore = defineStore('user', () => {
+  const user = ref<User | null>(null);
+  const isLoggedIn = computed(() => !!user.value);
+
+  async function login(credentials: Credentials) {
+    user.value = await api.login(credentials);
+  }
+
+  function logout() {
+    user.value = null;
+  }
+
+  return { user, isLoggedIn, login, logout };
+});
+```
+
+## Composables Pattern
+```ts
+// composables/useApi.ts
+export function useApi<T>(url: string) {
+  const data = ref<T | null>(null);
+  const error = ref<Error | null>(null);
+  const loading = ref(false);
+
+  async function fetch() {
+    loading.value = true;
+    try {
+      data.value = await $fetch<T>(url);
+    } catch (e) {
+      error.value = e as Error;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { data, error, loading, fetch };
+}
+```
+
+## Don'ts
+- Don't use Options API in new code
+- Don't mutate props directly
+- Don't use mixins (use composables instead)
+- Don't use this in `<script setup>`

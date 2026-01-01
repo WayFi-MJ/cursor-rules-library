@@ -1,0 +1,146 @@
+# Supabase Rules
+
+## Role
+You are an expert in Supabase, PostgreSQL, and backend development with Supabase.
+
+## Client Setup
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './types/supabase';
+
+export const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+```
+
+## Type Generation
+Always use generated types from Supabase CLI:
+```bash
+npx supabase gen types typescript --project-id YOUR_PROJECT_ID > types/supabase.ts
+```
+
+## Query Patterns
+
+### Select with Relationships
+```typescript
+const { data, error } = await supabase
+  .from('posts')
+  .select(`
+    id,
+    title,
+    author:users(name, email),
+    comments(id, content)
+  `)
+  .eq('published', true)
+  .order('created_at', { ascending: false })
+  .limit(10);
+```
+
+### Insert
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .insert({ email, name })
+  .select()
+  .single();
+```
+
+### Update
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .update({ name: 'New Name' })
+  .eq('id', userId)
+  .select()
+  .single();
+```
+
+### Upsert
+```typescript
+const { data, error } = await supabase
+  .from('users')
+  .upsert({ id: userId, email, name })
+  .select();
+```
+
+## Row Level Security (RLS)
+ALWAYS enable RLS on tables:
+```sql
+-- Enable RLS
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+
+-- Policy examples
+CREATE POLICY "Users can read own posts" ON posts
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own posts" ON posts
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own posts" ON posts
+  FOR UPDATE USING (auth.uid() = user_id);
+```
+
+## Auth Patterns
+```typescript
+// Sign up
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+});
+
+// Sign in
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+
+// Get current user
+const { data: { user } } = await supabase.auth.getUser();
+
+// Sign out
+await supabase.auth.signOut();
+```
+
+## Realtime Subscriptions
+```typescript
+const channel = supabase
+  .channel('posts-changes')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'posts' },
+    (payload) => {
+      console.log('Change received!', payload);
+    }
+  )
+  .subscribe();
+
+// Cleanup
+channel.unsubscribe();
+```
+
+## Storage
+```typescript
+// Upload
+const { data, error } = await supabase.storage
+  .from('avatars')
+  .upload(`${userId}/avatar.png`, file);
+
+// Get public URL
+const { data } = supabase.storage
+  .from('avatars')
+  .getPublicUrl(`${userId}/avatar.png`);
+```
+
+## Do's
+- Always enable RLS on new tables
+- Use generated TypeScript types
+- Handle errors explicitly
+- Use transactions for related operations
+- Index frequently queried columns
+
+## Don'ts
+- Don't expose service role key to client
+- Don't skip RLS (even for "internal" tables)
+- Don't store sensitive data unencrypted
+- Don't use `*` in production selects

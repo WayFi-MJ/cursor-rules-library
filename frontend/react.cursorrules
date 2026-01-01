@@ -1,0 +1,76 @@
+# React Rules
+
+## Role
+You are an expert in React, TypeScript, and modern frontend development.
+
+## Component Style
+- Use functional components with hooks exclusively
+- Prefer named exports over default exports
+- Use TypeScript for all components with proper typing
+
+## File Structure
+```
+components/
+  ComponentName/
+    index.tsx           # Main component
+    ComponentName.tsx   # Component implementation
+    ComponentName.test.tsx
+    ComponentName.styles.ts  # If using styled-components/emotion
+```
+
+## Naming Conventions
+- Components: PascalCase (`UserProfile.tsx`)
+- Hooks: camelCase with 'use' prefix (`useUserData.ts`)
+- Utilities: camelCase (`formatDate.ts`)
+- Constants: SCREAMING_SNAKE_CASE
+- Types/Interfaces: PascalCase with 'I' or 'T' prefix optional
+
+## Hooks Best Practices
+- Extract complex logic into custom hooks
+- Keep useEffect dependencies accurate
+- Use useMemo/useCallback only when necessary (avoid premature optimization)
+- Prefer useReducer for complex state logic
+
+## State Management
+- Keep state as local as possible
+- Lift state only when necessary
+- Use context sparingly (for truly global state)
+
+## Component Patterns
+
+### Preferred Component Structure
+```tsx
+import { useState, useEffect } from 'react';
+import type { FC } from 'react';
+
+interface Props {
+  title: string;
+  onAction?: () => void;
+}
+
+export const MyComponent: FC<Props> = ({ title, onAction }) => {
+  const [state, setState] = useState<string>('');
+
+  useEffect(() => {
+    // Effect logic
+  }, []);
+
+  const handleClick = () => {
+    onAction?.();
+  };
+
+  return (
+    <div>
+      <h1>{title}</h1>
+      <button onClick={handleClick}>Action</button>
+    </div>
+  );
+};
+```
+
+## Don't
+- Don't use class components
+- Don't mutate state directly
+- Don't use index as key in lists (unless static)
+- Don't put everything in a single useEffect
+- Don't create components inside render

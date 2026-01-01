@@ -1,0 +1,239 @@
+# Vercel Rules
+
+## Role
+You are an expert in Vercel deployment, serverless functions, and edge computing.
+
+## Project Configuration
+
+### vercel.json
+```json
+{
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/app/:path*", "destination": "/:path*" }
+  ],
+  "redirects": [
+    { "source": "/old-page", "destination": "/new-page", "permanent": true }
+  ]
+}
+```
+
+## Environment Variables
+
+### Naming Conventions
+```env
+# Public (exposed to browser) - prefix with NEXT_PUBLIC_
+NEXT_PUBLIC_APP_URL=https://myapp.vercel.app
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+
+# Private (server-only) - no prefix
+DATABASE_URL=postgres://...
+STRIPE_SECRET_KEY=sk_live_...
+API_SECRET=...
+```
+
+### Environment-Specific
+```bash
+# Use Vercel CLI to set env vars
+vercel env add DATABASE_URL production
+vercel env add DATABASE_URL preview
+vercel env add DATABASE_URL development
+
+# Pull env vars locally
+vercel env pull .env.local
+```
+
+## Edge Functions
+```typescript
+// app/api/edge-example/route.ts
+export const runtime = 'edge'; // Runs on Edge Runtime
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const country = request.headers.get('x-vercel-ip-country') || 'US';
+  
+  return new Response(JSON.stringify({ country }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+```
+
+## Middleware
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Geo-based routing
+  const country = request.geo?.country || 'US';
+  
+  // Auth check
+  const token = request.cookies.get('token');
+  if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Add headers
+  const response = NextResponse.next();
+  response.headers.set('x-custom-header', 'value');
+  
+  return response;
+}
+
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};
+```
+
+## Cron Jobs
+```typescript
+// app/api/cron/daily/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  // Verify cron secret (recommended)
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Your cron job logic
+  await performDailyTask();
+
+  return NextResponse.json({ success: true });
+}
+```
+
+## Serverless Function Patterns
+```typescript
+// app/api/heavy-task/route.ts
+export const maxDuration = 60; // Max 60 seconds for Pro plan
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: Request) {
+  // For long tasks, consider:
+  // 1. Background jobs (Inngest, Trigger.dev)
+  // 2. Streaming responses
+  // 3. Breaking into smaller chunks
+  
+  const stream = new ReadableStream({
+    async start(controller) {
+      for (const chunk of await processInChunks()) {
+        controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk)));
+      }
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+```
+
+## Image Optimization
+```typescript
+// next.config.js
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
+};
+```
+
+## Analytics & Speed Insights
+```typescript
+// app/layout.tsx
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
+  );
+}
+```
+
+## Preview Deployments
+```typescript
+// Detect preview environment
+const isPreview = process.env.VERCEL_ENV === 'preview';
+const isProduction = process.env.VERCEL_ENV === 'production';
+
+// Get deployment URL
+const deploymentUrl = process.env.VERCEL_URL 
+  ? `https://${process.env.VERCEL_URL}`
+  : 'http://localhost:3000';
+```
+
+## CLI Commands
+```bash
+# Development
+vercel dev                    # Run locally with Vercel features
+vercel env pull               # Pull env vars to .env.local
+
+# Deployment
+vercel                        # Deploy to preview
+vercel --prod                 # Deploy to production
+vercel deploy --prebuilt      # Deploy pre-built output
+
+# Management
+vercel ls                     # List deployments
+vercel logs <url>             # View logs
+vercel inspect <url>          # Deployment details
+vercel rollback               # Rollback to previous
+```
+
+## Do's
+- Use Edge Runtime for low-latency responses
+- Set appropriate maxDuration for long operations
+- Use preview deployments for testing
+- Secure cron endpoints with secrets
+- Use Vercel Analytics for performance monitoring
+- Pull env vars with `vercel env pull`
+
+## Don'ts
+- Don't hardcode URLs (use VERCEL_URL)
+- Don't exceed function timeout limits
+- Don't store secrets in vercel.json
+- Don't ignore preview deployment testing
+- Don't use Node.js APIs in Edge Runtime
